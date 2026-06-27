@@ -24,6 +24,11 @@ const LAYOUTS = [
   { id:'grid4',   ico:'⊞', nm:'4 格拼貼', n:4 },
   { id:'grid6',   ico:'⊟', nm:'6 格',     n:6 },
   { id:'grid9',   ico:'▦', nm:'9 格',     n:9 },
+  { id:'scatter2',ico:'🃏', nm:'散落 2 張', n:2 },
+  { id:'scatter3',ico:'🎴', nm:'散落 3 張', n:3 },
+  { id:'scatter4',ico:'🗂️', nm:'散落 4 張', n:4 },
+  { id:'mix3',    ico:'◤', nm:'大小錯落',  n:3 },
+  { id:'diag2',   ico:'◣', nm:'斜切雙圖',  n:2 },
 ];
 const layoutN = id => (LAYOUTS.find(l=>l.id===id)||{}).n || 1;
 
