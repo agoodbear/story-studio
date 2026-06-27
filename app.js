@@ -218,15 +218,7 @@ function buildStage(el, f){
   el.className = `stage style-${f.style} layout-${f.layout}`;
   el.innerHTML = styleInner(f);
 }
-// 在預覽舞台的每個格子疊一個透明真檔案輸入（點它就原生開相簿）
-function addSlotInputs(el){
-  el.querySelectorAll('.photo-area > .slot').forEach((slot,idx)=>{
-    const inp=document.createElement('input');
-    inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.className='slot-input'; inp.dataset.slot=idx;
-    slot.appendChild(inp);
-  });
-}
-function paintStage(){ buildStage($('#stage'), curFrame()); addSlotInputs($('#stage')); }
+function paintStage(){ buildStage($('#stage'), curFrame()); }
 function render(){
   const f=curFrame(); if(!f) return;
   paintStage();
@@ -311,13 +303,15 @@ function bind(){
   $('#exportBtn').addEventListener('click', exportCurrent);
   $('#exportAllBtn').addEventListener('click', exportAll);
 
-  // 點格子＝點到疊在上面的真檔案輸入 → iOS 原生跳「照片圖庫/拍照/選擇檔案」(change 事件委派)
+  // 檔案輸入框放 body 層（不在縮放/旋轉的舞台內，iOS 才開得了照片選取器）；非 display:none
+  const picker = document.createElement('input');
+  picker.type='file'; picker.accept='image/*'; picker.multiple=true;
+  picker.style.cssText='position:fixed;left:8px;bottom:8px;width:1px;height:1px;opacity:0;z-index:-1';
+  document.body.appendChild(picker);
+  picker.addEventListener('change', e=>{ if(state.pendingSlot!=null && picker.files.length) addFilesToSlot(picker.files, state.pendingSlot); state.pendingSlot=null; picker.value=''; });
+  // 點格子 → 同步觸發 body 層的輸入框（手機跳「照片圖庫/選擇照片或影片」）
   const slotIndex = el => { const s=el.closest('.slot'); return s? [...s.parentElement.querySelectorAll(':scope > .slot')].indexOf(s) : -1; };
-  $('#stage').addEventListener('change', e=>{
-    const inp=e.target.closest('.slot-input'); if(!inp) return;
-    if(inp.files.length) addFilesToSlot(inp.files, +inp.dataset.slot);
-    inp.value='';
-  });
+  $('#stage').addEventListener('click', e=>{ const i=slotIndex(e.target); if(i<0) return; state.pendingSlot=i; picker.click(); });
   // 從 Photos / Finder 拖照片到格子
   $('#stage').addEventListener('dragover', e=>{ if(e.target.closest('.slot')){ e.preventDefault(); $('#stage').classList.add('dropping'); } });
   $('#stage').addEventListener('dragleave', ()=>$('#stage').classList.remove('dropping'));
