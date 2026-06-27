@@ -213,9 +213,18 @@ function buildStage(el, f){
   el.className = `stage style-${f.style} layout-${f.layout}`;
   el.innerHTML = styleInner(f);
 }
+// 在預覽舞台的每個格子疊一個透明真檔案輸入（點它就原生開相簿）
+function addSlotInputs(el){
+  el.querySelectorAll('.photo-area > .slot').forEach((slot,idx)=>{
+    const inp=document.createElement('input');
+    inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.className='slot-input'; inp.dataset.slot=idx;
+    slot.appendChild(inp);
+  });
+}
+function paintStage(){ buildStage($('#stage'), curFrame()); addSlotInputs($('#stage')); }
 function render(){
   const f=curFrame(); if(!f) return;
-  buildStage($('#stage'), f);
+  paintStage();
   renderCards(); renderTray(); syncTexts();
 }
 
@@ -282,10 +291,10 @@ function bind(){
     const old=f.slots.filter(Boolean); f.slots=Array.from({length:n},(_,i)=>old[i]||null); render();
   });
 
-  $('#txtTitle').addEventListener('input', e=>{curFrame().title=e.target.value; buildStage($('#stage'),curFrame());});
-  $('#txtCaption').addEventListener('input', e=>{curFrame().caption=e.target.value; buildStage($('#stage'),curFrame());});
-  $('#txtTag').addEventListener('input', e=>{curFrame().tag=e.target.value; buildStage($('#stage'),curFrame());});
-  $('#txtDateOn').addEventListener('change', e=>{curFrame().dateOn=e.target.checked; buildStage($('#stage'),curFrame());});
+  $('#txtTitle').addEventListener('input', e=>{curFrame().title=e.target.value; paintStage();});
+  $('#txtCaption').addEventListener('input', e=>{curFrame().caption=e.target.value; paintStage();});
+  $('#txtTag').addEventListener('input', e=>{curFrame().tag=e.target.value; paintStage();});
+  $('#txtDateOn').addEventListener('change', e=>{curFrame().dateOn=e.target.checked; paintStage();});
 
   $('#frames').addEventListener('click', e=>{
     const del=e.target.closest('[data-del]');
@@ -297,13 +306,13 @@ function bind(){
   $('#exportBtn').addEventListener('click', exportCurrent);
   $('#exportAllBtn').addEventListener('click', exportAll);
 
-  // 點預覽格子的「＋」→ 直接選照片（手機開相簿、電腦開檔案）
-  const slotInput = document.createElement('input');
-  slotInput.type='file'; slotInput.accept='image/*'; slotInput.multiple=true; slotInput.style.display='none';
-  document.body.appendChild(slotInput);
-  slotInput.addEventListener('change', e=>{ if(state.pendingSlot!=null){ addFilesToSlot(e.target.files, state.pendingSlot); state.pendingSlot=null; } e.target.value=''; });
-  const slotIndex = el => { const s=el.closest('.slot'); return s? [...s.parentElement.children].indexOf(s) : -1; };
-  $('#stage').addEventListener('click', e=>{ const i=slotIndex(e.target); if(i<0) return; state.pendingSlot=i; slotInput.click(); });
+  // 點格子＝點到疊在上面的真檔案輸入 → iOS 原生跳「照片圖庫/拍照/選擇檔案」(change 事件委派)
+  const slotIndex = el => { const s=el.closest('.slot'); return s? [...s.parentElement.querySelectorAll(':scope > .slot')].indexOf(s) : -1; };
+  $('#stage').addEventListener('change', e=>{
+    const inp=e.target.closest('.slot-input'); if(!inp) return;
+    if(inp.files.length) addFilesToSlot(inp.files, +inp.dataset.slot);
+    inp.value='';
+  });
   // 從 Photos / Finder 拖照片到格子
   $('#stage').addEventListener('dragover', e=>{ if(e.target.closest('.slot')){ e.preventDefault(); $('#stage').classList.add('dropping'); } });
   $('#stage').addEventListener('dragleave', ()=>$('#stage').classList.remove('dropping'));
