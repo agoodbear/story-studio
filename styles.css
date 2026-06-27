@@ -78,10 +78,11 @@ button.primary.ghost{background:transparent;border:1.5px solid var(--accent);col
 .render-stage-holder{position:fixed;left:-99999px;top:0;pointer-events:none;opacity:1}
 
 .stage .photo-area{position:absolute;display:grid;gap:var(--gap,0px)}
-.stage .slot{position:relative;overflow:hidden;background:#222}
+.stage .slot{position:relative;overflow:hidden;background:#222;cursor:pointer}
 .stage .slot img{width:100%;height:100%;object-fit:cover;display:block;filter:var(--imgfx,none)}
-.stage .slot.empty{display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.35);font-size:30px}
-.stage .slot.empty::after{content:"＋"}
+.stage .slot.empty{display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:34px;background:#2a2a2e}
+.stage .slot.empty::after{content:"＋ 點此／拖照片";font-size:30px;letter-spacing:.05em;text-align:center;line-height:1.4}
+.stage.dropping .slot.empty{outline:7px dashed #5b8cff;outline-offset:-12px;color:#5b8cff;background:#22304d}
 
 /* ---- 版面（照片格子） ---- */
 .layout-single .photo-area{grid-template-columns:1fr;grid-template-rows:1fr}
@@ -91,6 +92,10 @@ button.primary.ghost{background:transparent;border:1.5px solid var(--accent);col
 .layout-grid3 .slot:nth-child(2){grid-area:b}
 .layout-grid3 .slot:nth-child(3){grid-area:c}
 .layout-grid4 .photo-area{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.layout-split2v .photo-area{grid-template-columns:1fr 1fr;grid-template-rows:1fr}
+.layout-strip3 .photo-area{grid-template-columns:1fr;grid-template-rows:1fr 1fr 1fr}
+.layout-grid6 .photo-area{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1fr}
+.layout-grid9 .photo-area{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
 
 /* ====== 風格 1：拍立得白框 ====== */
 .style-polaroid{background:radial-gradient(130% 90% at 50% 16%,#f7ecdd 0%,#e7cfb0 46%,#caa67c 100%)}
@@ -197,3 +202,50 @@ button.primary.ghost{background:transparent;border:1.5px solid var(--accent);col
 .style-dark .s-caption{position:absolute;left:96px;bottom:158px;font-family:'Noto Serif TC';font-weight:300;font-size:36px;color:#b3aea1}
 .style-dark .s-date{position:absolute;right:96px;bottom:166px;font-family:'Cormorant Garamond',serif;font-size:60px;color:#c6a75e}
 .style-dark .s-tag{position:absolute;left:96px;bottom:94px;font-size:28px;color:#76726a;letter-spacing:.25em}
+
+/* ====== 風格 9：手帳拼貼 ====== */
+.style-scrapbook{background:#dcc9a8;color:#3a2f23}
+.style-scrapbook::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(90,60,30,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(90,60,30,.05) 1px,transparent 1px);background-size:48px 48px}
+.style-scrapbook .photo-area{inset:auto;left:100px;right:100px;top:230px;height:1170px;--gap:30px}
+.style-scrapbook .slot{border:14px solid #fff;border-bottom-width:42px;border-radius:3px;box-shadow:0 16px 32px rgba(60,40,20,.32)}
+.style-scrapbook .slot:nth-child(odd){transform:rotate(-2deg)}
+.style-scrapbook .slot:nth-child(even){transform:rotate(2.2deg)}
+.style-scrapbook{--imgfx:saturate(1.05) brightness(1.01)}
+.style-scrapbook .tape{position:absolute;width:188px;height:56px;background:rgba(232,212,150,.62);box-shadow:0 5px 12px rgba(0,0,0,.12)}
+.style-scrapbook .tape.t1{top:188px;left:120px;transform:rotate(-9deg)}
+.style-scrapbook .tape.t2{top:1316px;right:140px;transform:rotate(7deg);background:rgba(206,176,206,.55)}
+.style-scrapbook .s-title{position:absolute;left:0;right:0;top:84px;text-align:center;font-family:'Long Cang',cursive;font-size:106px;color:#473726}
+.style-scrapbook .s-caption{position:absolute;left:0;right:0;bottom:158px;text-align:center;font-family:'Long Cang',cursive;font-size:58px;color:#6b5743}
+.style-scrapbook .s-date{position:absolute;right:130px;bottom:96px;font-family:'Gochi Hand',cursive;font-size:50px;color:#7a5b36}
+.style-scrapbook .s-tag{position:absolute;left:130px;bottom:102px;letter-spacing:.2em;font-size:30px;color:#7a5b36}
+
+/* ====== 風格 10：雜誌封面（滿版刊頭） ====== */
+.style-cover{background:#000}
+.style-cover .photo-area{inset:0;--gap:5px}
+.style-cover .c-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.12) 26%,transparent 60%,rgba(0,0,0,.65))}
+.style-cover .s-title{position:absolute;left:60px;right:60px;top:66px;font-family:'Noto Serif TC';font-weight:900;font-size:152px;line-height:.95;letter-spacing:.02em;color:#fff;text-shadow:0 4px 28px rgba(0,0,0,.5)}
+.style-cover .s-caption{position:absolute;left:64px;right:360px;bottom:150px;font-size:44px;color:#fff;font-weight:300;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.style-cover .s-date{position:absolute;right:64px;bottom:158px;font-family:'Space Mono',monospace;font-weight:700;font-size:42px;color:#fff}
+.style-cover .s-tag{position:absolute;left:64px;bottom:90px;font-family:'Space Mono',monospace;letter-spacing:.22em;font-size:28px;color:#fff;opacity:.85}
+
+/* ====== 風格 11：霓虹夜間 ====== */
+.style-neon{background:radial-gradient(120% 90% at 50% 8%,#1c0f33,#0a0a16 72%)}
+.style-neon .photo-area{inset:auto;left:100px;right:100px;top:296px;height:1180px;--gap:12px}
+.style-neon .slot{border:3px solid #ff4ecd;border-radius:8px;box-shadow:0 0 30px rgba(255,78,205,.5),inset 0 0 22px rgba(124,247,255,.16)}
+.style-neon{--imgfx:saturate(1.16) contrast(1.05)}
+.style-neon .n-glow{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(rgba(124,247,255,.045) 0 2px,transparent 2px 5px)}
+.style-neon .s-title{position:absolute;left:0;right:0;top:104px;text-align:center;font-family:'Noto Sans TC';font-weight:900;font-size:112px;color:#fff;text-shadow:0 0 16px #ff4ecd,0 0 42px #ff4ecd,0 0 72px rgba(124,247,255,.6)}
+.style-neon .s-tag{position:absolute;top:236px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;letter-spacing:.35em;font-size:30px;color:#b18cff}
+.style-neon .s-caption{position:absolute;left:0;right:0;bottom:160px;text-align:center;font-family:'Space Mono',monospace;font-size:38px;color:#7cf7ff;text-shadow:0 0 14px rgba(124,247,255,.7)}
+.style-neon .s-date{position:absolute;left:0;right:0;bottom:96px;text-align:center;font-family:'Space Mono',monospace;font-size:32px;letter-spacing:.2em;color:#ff4ecd;text-shadow:0 0 12px rgba(255,78,205,.7)}
+
+/* ====== 風格 12：日系清新 ====== */
+.style-japan{background:#f4f0e8;color:#3a382f}
+.style-japan .photo-area{inset:auto;left:130px;right:130px;top:252px;height:1080px;--gap:16px}
+.style-japan .slot{border-radius:2px}
+.style-japan{--imgfx:saturate(.92) brightness(1.02)}
+.style-japan .j-line{position:absolute;left:130px;top:150px;width:3px;height:74px;background:#b0473a}
+.style-japan .s-title{position:absolute;left:130px;top:1404px;font-family:'Noto Serif TC';font-weight:500;font-size:80px;letter-spacing:.18em;color:#3a382f}
+.style-japan .s-caption{position:absolute;left:132px;bottom:172px;font-family:'Noto Serif TC';font-weight:300;font-size:34px;letter-spacing:.1em;color:#8a8678}
+.style-japan .s-date{position:absolute;right:130px;bottom:180px;font-family:'Cormorant Garamond',serif;font-size:54px;color:#a8a395}
+.style-japan .s-tag{position:absolute;left:132px;bottom:102px;font-size:28px;letter-spacing:.3em;color:#bdb8a8}

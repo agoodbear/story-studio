@@ -10,12 +10,20 @@ const STYLES = [
   { id:'bold',     ico:'🅱️', nm:'粗體標語',   ds:'滿版·大字' },
   { id:'gradient', ico:'🌈', nm:'漸層卡',     ds:'繽紛·圓角' },
   { id:'dark',     ico:'🌑', nm:'質感暗黑',   ds:'黑金·襯線' },
+  { id:'scrapbook',ico:'📒', nm:'手帳拼貼',   ds:'紙膠帶·手寫' },
+  { id:'cover',    ico:'🗞️', nm:'雜誌封面',   ds:'滿版·刊頭' },
+  { id:'neon',     ico:'💟', nm:'霓虹夜間',   ds:'發光·暗夜' },
+  { id:'japan',    ico:'🍵', nm:'日系清新',   ds:'淡雅·留白' },
 ];
 const LAYOUTS = [
-  { id:'single', ico:'▭', nm:'單張滿版', n:1 },
-  { id:'split2', ico:'⬓', nm:'雙圖分割', n:2 },
-  { id:'grid3',  ico:'◰', nm:'3 格拼貼', n:3 },
-  { id:'grid4',  ico:'⊞', nm:'4 格拼貼', n:4 },
+  { id:'single',  ico:'▭', nm:'單張滿版', n:1 },
+  { id:'split2',  ico:'⬓', nm:'雙圖上下', n:2 },
+  { id:'split2v', ico:'◫', nm:'雙圖左右', n:2 },
+  { id:'grid3',   ico:'◰', nm:'3 格拼貼', n:3 },
+  { id:'strip3',  ico:'≣', nm:'三橫條',   n:3 },
+  { id:'grid4',   ico:'⊞', nm:'4 格拼貼', n:4 },
+  { id:'grid6',   ico:'⊟', nm:'6 格',     n:6 },
+  { id:'grid9',   ico:'▦', nm:'9 格',     n:9 },
 ];
 const layoutN = id => (LAYOUTS.find(l=>l.id===id)||{}).n || 1;
 
@@ -35,26 +43,41 @@ function newFrame(){
 const curFrame = () => state.frames[state.cur];
 
 /* ---------- 上傳 + EXIF 轉正 ---------- */
-async function handleFiles(fileList){
-  const files = [...fileList].filter(f => /image\//.test(f.type) || /\.(hei[cf]|jpe?g|png)$/i.test(f.name));
-  if(!files.length) return;
-  setStatus(`處理 ${files.length} 張…`);
-  for(const f of files){
-    try{
-      let time = null;
-      try{ const ex = await exifr.parse(f, ['DateTimeOriginal','CreateDate']); time = ex && (ex.DateTimeOriginal||ex.CreateDate); if(time) time = +new Date(time); }catch(e){}
-      let blob = f;
-      if(/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name)){
-        setStatus(`轉換 HEIC：${f.name}…`);
-        blob = await heic2any({ blob:f, toType:'image/jpeg', quality:0.92 });
-        if(Array.isArray(blob)) blob = blob[0];
-      }
-      const up = await normalizeUpright(blob);
-      state.photos.push({ id:uid++, dataUrl:up.dataUrl, w:up.w, h:up.h, time });
-    }catch(err){ console.error('photo fail', f.name, err); setStatus('⚠️ 有照片處理失敗：'+f.name); }
+const imgFiles = fl => [...fl].filter(f => /image\//.test(f.type) || /\.(hei[cf]|jpe?g|png)$/i.test(f.name));
+
+async function fileToPhoto(f){
+  let time = null;
+  try{ const ex = await exifr.parse(f, ['DateTimeOriginal','CreateDate']); time = ex && (ex.DateTimeOriginal||ex.CreateDate); if(time) time = +new Date(time); }catch(e){}
+  let blob = f;
+  if(/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name)){
+    setStatus(`轉換 HEIC：${f.name}…`);
+    blob = await heic2any({ blob:f, toType:'image/jpeg', quality:0.92 });
+    if(Array.isArray(blob)) blob = blob[0];
   }
-  sortByTime(true);
-  renderTray(); setStatus(`已載入 ${state.photos.length} 張`);
+  const up = await normalizeUpright(blob);
+  const p = { id:uid++, dataUrl:up.dataUrl, w:up.w, h:up.h, time };
+  state.photos.push(p);
+  return p;
+}
+
+async function handleFiles(fileList){
+  const files = imgFiles(fileList); if(!files.length) return;
+  setStatus(`處理 ${files.length} 張…`);
+  for(const f of files){ try{ await fileToPhoto(f); }catch(err){ console.error('photo fail',f.name,err); setStatus('⚠️ 有照片處理失敗：'+f.name);} }
+  sortByTime(true); renderTray(); setStatus(`已載入 ${state.photos.length} 張`);
+}
+
+// 點格子的＋ 或 拖曳照片到格子 → 從該格起算填入
+async function addFilesToSlot(fileList, startIdx){
+  const files = imgFiles(fileList); if(!files.length) return;
+  const f = curFrame(), n = layoutN(f.layout);
+  setStatus(`處理 ${files.length} 張…`);
+  let idx = startIdx;
+  for(const file of files){
+    try{ const p = await fileToPhoto(file); if(idx<n){ f.slots[idx]=p.id; idx++; } }
+    catch(err){ console.error(err); setStatus('⚠️ 處理失敗：'+file.name); }
+  }
+  sortByTime(true); render(); setStatus('已加入照片 ✅');
 }
 
 // 用 createImageBitmap 套用 EXIF 方向 → 轉正、縮到長邊≤1600 → JPEG dataURL
@@ -172,6 +195,18 @@ function styleInner(f){
   if(f.style==='dark') return `${pa}<div class="d-line"></div>
     ${T?`<div class="s-title">${T}</div>`:''}${C?`<div class="s-caption">${C}</div>`:''}
     ${date?`<div class="s-date">${date}</div>`:''}${G?`<div class="s-tag">${G}</div>`:''}`;
+  if(f.style==='scrapbook') return `<span class="tape t1"></span><span class="tape t2"></span>
+    ${T?`<div class="s-title">${T}</div>`:''}${pa}
+    ${C?`<div class="s-caption">${C}</div>`:''}${date?`<div class="s-date">${date}</div>`:''}${G?`<div class="s-tag">${G}</div>`:''}`;
+  if(f.style==='cover') return `${pa}<div class="c-shade"></div>
+    ${T?`<div class="s-title">${T}</div>`:''}${C?`<div class="s-caption">${C}</div>`:''}
+    ${date?`<div class="s-date">${date}</div>`:''}${G?`<div class="s-tag">${G}</div>`:''}`;
+  if(f.style==='neon') return `${pa}<div class="n-glow"></div>
+    ${T?`<div class="s-title">${T}</div>`:''}${G?`<div class="s-tag">${G}</div>`:''}
+    ${C?`<div class="s-caption">${C}</div>`:''}${date?`<div class="s-date">${date}</div>`:''}`;
+  if(f.style==='japan') return `<div class="j-line"></div>${pa}
+    ${T?`<div class="s-title">${T}</div>`:''}${C?`<div class="s-caption">${C}</div>`:''}
+    ${date?`<div class="s-date">${date}</div>`:''}${G?`<div class="s-tag">${G}</div>`:''}`;
   return pa;
 }
 function buildStage(el, f){
@@ -261,6 +296,19 @@ function bind(){
   $('#autoFillBtn').addEventListener('click', autoFill);
   $('#exportBtn').addEventListener('click', exportCurrent);
   $('#exportAllBtn').addEventListener('click', exportAll);
+
+  // 點預覽格子的「＋」→ 直接選照片（手機開相簿、電腦開檔案）
+  const slotInput = document.createElement('input');
+  slotInput.type='file'; slotInput.accept='image/*'; slotInput.multiple=true; slotInput.style.display='none';
+  document.body.appendChild(slotInput);
+  slotInput.addEventListener('change', e=>{ if(state.pendingSlot!=null){ addFilesToSlot(e.target.files, state.pendingSlot); state.pendingSlot=null; } e.target.value=''; });
+  const slotIndex = el => { const s=el.closest('.slot'); return s? [...s.parentElement.children].indexOf(s) : -1; };
+  $('#stage').addEventListener('click', e=>{ const i=slotIndex(e.target); if(i<0) return; state.pendingSlot=i; slotInput.click(); });
+  // 從 Photos / Finder 拖照片到格子
+  $('#stage').addEventListener('dragover', e=>{ if(e.target.closest('.slot')){ e.preventDefault(); $('#stage').classList.add('dropping'); } });
+  $('#stage').addEventListener('dragleave', ()=>$('#stage').classList.remove('dropping'));
+  $('#stage').addEventListener('drop', e=>{ e.preventDefault(); $('#stage').classList.remove('dropping'); const i=slotIndex(e.target); if(i>=0 && e.dataTransfer.files.length) addFilesToSlot(e.dataTransfer.files, i); });
+
   window.addEventListener('resize', fitPreview);
 }
 
